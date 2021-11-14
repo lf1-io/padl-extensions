@@ -1,0 +1,30 @@
+from ts.torch_handler.base_handler import BaseHandler
+import logging
+from padl import load
+logger = logging.getLogger(__name__)
+
+
+class PadlHandler(BaseHandler):
+    def __init__(self):
+        super().__init__()
+        self._pd_preprocess = None
+        self._pd_forward = None
+        self._pd_postprocess = None
+
+    def initialize(self, context):
+        properties = context.system_properties
+        model_dir = properties.get('model_dir')
+        m = load(model_dir)
+        self._pd_preprocess = m.pd_preprocess
+        self._pd_forward = m.pd_forward
+        self._pd_postprocess = m.pd_postprocess
+
+    def preprocess(self, data):
+        data = data[0]['body'].decode('utf-8')
+        return self._pd_preprocess.infer_apply(data)
+
+    def inference(self, data, *args, **kwargs):
+        return self._pd_forward.infer_apply(data)
+
+    def postprocess(self, data):
+        return self._pd_postprocess.infer_apply(data)
