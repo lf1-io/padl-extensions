@@ -1,0 +1,4 @@
+fastai
+transformers[pytorch]
+pytorch-lightning
+padl
