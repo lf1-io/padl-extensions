@@ -1,1 +1,3 @@
 padl
+torch
+pytorch_lightning
