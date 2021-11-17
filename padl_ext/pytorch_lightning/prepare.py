@@ -15,7 +15,7 @@ class PADLLightning(pl.LightningModule):
     :param train_data: list of training data points
     :param val_data: list of validation data points
     :param test_data: list of test data points
-    :param loader_kwargs: loader key word arguments for the DataLoader
+    :param kwargs: loader key word arguments for the DataLoader
     """
     def __init__(
         self,
@@ -37,7 +37,7 @@ class PADLLightning(pl.LightningModule):
         # Set Pytorch layers as attributes from PADL model
         layers = padl_model.pd_layers
         for i, layer in enumerate(layers):
-            key = f'layer_{i}'
+            key = f'{layer.__class__.__name__}_{i}'
             setattr(self, key, layer)
 
     def forward(self, x):
