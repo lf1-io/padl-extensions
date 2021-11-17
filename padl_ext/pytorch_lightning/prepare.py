@@ -35,7 +35,7 @@ class PADLLightning(pl.LightningModule):
         self.model.pd_forward_device_check()
 
         # Set Pytorch layers as attributes from PADL model
-        layers = padl_model.pd_layers
+        layers = self.model.pd_layers
         for i, layer in enumerate(layers):
             key = f'{layer.__class__.__name__}_{i}'
             setattr(self, key, layer)
