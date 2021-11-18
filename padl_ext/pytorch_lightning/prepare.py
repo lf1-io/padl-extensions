@@ -29,16 +29,13 @@ class OnCheckpointSavePadl(Callback):
 
         if path not in self.pd_previous:
             self.pd_previous.append(path)
+            pl_module.model.pd_save(path, force_overwrite=True)
 
         k = len(trainer.checkpoint_callback.best_k_models) + 1 \
             if trainer.checkpoint_callback.save_top_k == -1 else trainer.checkpoint_callback.save_top_k
-
         del_dirpath = None
         if len(self.pd_previous) == k + 1 and k > 0:
             del_dirpath = self.pd_previous.pop(0)
-
-        pl_module.model.pd_save(path, force_overwrite=True)
-
         if del_dirpath is not None:
             shutil.rmtree(del_dirpath)
 
