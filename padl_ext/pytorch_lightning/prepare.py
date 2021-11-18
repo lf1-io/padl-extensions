@@ -9,8 +9,6 @@ import pytorch_lightning as pl
 from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, Callback
 
 
-# TODO Some issues to resolve
-#      If best_model_path is the same between two iterations this will still overwrite it, shoudn't do that
 class OnCheckpointSavePadl(Callback):
     def __init__(self):
         super().__init__()
@@ -19,16 +17,18 @@ class OnCheckpointSavePadl(Callback):
     def on_save_checkpoint(self, trainer, pl_module, checkpoint):
         """Adding PADL saving to the checkpointing in Pytorch Lightning. It will save both at
         `dirpath` and `best_model_path` as found in `ModelCheckpoint` callback. """
-        best_model_path = trainer.checkpoint_callback.best_model_path
-        best_model_path = best_model_path.replace(Path(best_model_path).suffix, '')
+        # TODO This relies on dictionary ordering to correct
+        best_k_model_paths = list(trainer.checkpoint_callback.best_k_models)
+        best_k_model_paths = [x.replace(Path(x).suffix, '') for x in best_k_model_paths]
         dirpath = trainer.checkpoint_callback.dirpath
 
-        if best_model_path == '':
-            path = os.path.join(dirpath, 'model')
+        if len(best_k_model_paths) == 0:
+            path = os.path.join(dirpath, 'model.padl')
         else:
-            path = best_model_path
+            path = best_k_model_paths[-1] + '.padl'
 
-        self.pd_previous.append(path+'.padl')
+        if path not in self.pd_previous:
+            self.pd_previous.append(path)
 
         k = len(trainer.checkpoint_callback.best_k_models) + 1 \
             if trainer.checkpoint_callback.save_top_k == -1 else trainer.checkpoint_callback.save_top_k
