@@ -1,12 +1,31 @@
 """Connector to Pytorch Lightning"""
 
 import os
-import inspect
 from pathlib import Path
 import torch
 
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, Callback
+
+
+# TODO Some issues to resolve
+#      If best_model_path is the same between two iterations this will still overwrite it, shoudn't do that
+#      We leave behind previous versions of the best model. They should be removed when best_model_path is detected.
+#      Should we be saving at best_model_path and dirpath?
+class OnCheckpointSavePadl(Callback):
+    def on_save_checkpoint(self, trainer, pl_module, checkpoint):
+        """Adding PADL saving to the checkpointing in Pytorch Lightning. It will save both at
+        `dirpath` and `best_model_path` as found in `ModelCheckpoint` callback. """
+        best_model_path = trainer.checkpoint_callback.best_model_path
+        best_model_path = best_model_path.replace(Path(best_model_path).suffix, '')
+        dirpath = trainer.checkpoint_callback.dirpath
+
+        if best_model_path == '':
+            path = os.path.join(dirpath, 'model')
+        else:
+            path = best_model_path
+
+        pl_module.model.pd_save(path, force_overwrite=True)
 
 
 class PADLLightning(pl.LightningModule):
@@ -86,37 +105,10 @@ class PADLLightning(pl.LightningModule):
         loss = self.model.pd_forward.pd_call_transform(batch, 'eval')
         self.log("test_loss", loss)
 
-    # TODO Some issues to resolve
-    #      If best_model_path is the same between two iterations this will still overwrite it, shoudn't do that
-    #      We leave behind previous versions of the best model. They should be removed when best_model_path is detected.
-    #      Should we be saving at best_model_path and dirpath?
-    def on_save_checkpoint(self, checkpoint):
-        """Adding PADL saving to the checkpointing in Pytorch Lightning. It will save both at
-        `dirpath` and `best_model_path` as found in `ModelCheckpoint` callback. """
-        dirpath = None
-        best_model_path = None
-        for key in checkpoint['callbacks']:
-
-            if (inspect.isclass(key) and 'ModelCheckpoint' in key.__name__) or \
-                    (isinstance(key, str) and 'ModelCheckpoint' in key):
-                dirpath = checkpoint['callbacks'][key].get('dirpath')
-                best_model_path = checkpoint['callbacks'][key].get('best_model_path')
-                best_model_path = best_model_path.replace(Path(best_model_path).suffix, '')
-
-        if best_model_path == '':
-            path = os.path.join(dirpath, 'model')
-        else:
-            path = best_model_path
-
-        if path is None:
-            path = os.path.join(os.getcwd(), 'model')
-
-        self.model.pd_save(path, force_overwrite=True)
-
     def configure_callbacks(self):
         early_stop = EarlyStopping(monitor="val_loss", mode="min")
         checkpoint = ModelCheckpoint(monitor="val_loss", every_n_val_epochs=1)
-        return [early_stop, checkpoint]
+        return [early_stop, checkpoint, OnCheckpointSavePadl()]
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
