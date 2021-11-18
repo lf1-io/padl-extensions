@@ -6,6 +6,7 @@ from pathlib import Path
 import torch
 
 import pytorch_lightning as pl
+from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
 
 
 class PADLLightning(pl.LightningModule):
@@ -23,11 +24,13 @@ class PADLLightning(pl.LightningModule):
         train_data,
         val_data=None,
         test_data=None,
+        learning_rate=1e-3,
         **kwargs
     ):
         super().__init__()
         self.model = padl_model
         self.train_data = train_data
+        self.learning_rate = learning_rate
         self.val_data = val_data
         self.test_data = test_data
         self.loader_kwargs = kwargs
@@ -37,7 +40,11 @@ class PADLLightning(pl.LightningModule):
         # Set Pytorch layers as attributes from PADL model
         layers = self.model.pd_layers
         for i, layer in enumerate(layers):
-            key = f'{layer.__class__.__name__}_{i}'
+            key = f'{layer.__class__.__name__}'
+            counter = 0
+            while hasattr(self, key):
+                key = f'{layer.__class__.__name__}_{counter}'
+                counter += 1
             setattr(self, key, layer)
 
     def forward(self, x):
@@ -83,7 +90,6 @@ class PADLLightning(pl.LightningModule):
     #      If best_model_path is the same between two iterations this will still overwrite it, shoudn't do that
     #      We leave behind previous versions of the best model. They should be removed when best_model_path is detected.
     #      Should we be saving at best_model_path and dirpath?
-    #      Pytorch Lightning does an additional save at the end that doesn't call this function.
     def on_save_checkpoint(self, checkpoint):
         """Adding PADL saving to the checkpointing in Pytorch Lightning. It will save both at
         `dirpath` and `best_model_path` as found in `ModelCheckpoint` callback. """
@@ -107,10 +113,11 @@ class PADLLightning(pl.LightningModule):
 
         self.model.pd_save(path, force_overwrite=True)
 
-    # # TODO Do we need this one?
-    # def on_load_checkpoint(self, checkpoint):
-    #     return None
+    def configure_callbacks(self):
+        early_stop = EarlyStopping(monitor="val_loss", mode="min")
+        checkpoint = ModelCheckpoint(monitor="val_loss", every_n_val_epochs=1)
+        return [early_stop, checkpoint]
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=1e-3)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
