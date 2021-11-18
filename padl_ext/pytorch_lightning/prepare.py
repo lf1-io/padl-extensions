@@ -1,6 +1,7 @@
 """Connector to Pytorch Lightning"""
 
 import os
+import shutil
 from pathlib import Path
 import torch
 
@@ -10,8 +11,11 @@ from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, Callback
 
 # TODO Some issues to resolve
 #      If best_model_path is the same between two iterations this will still overwrite it, shoudn't do that
-#      We leave behind previous versions of the best model. They should be removed when best_model_path is detected.
 class OnCheckpointSavePadl(Callback):
+    def __init__(self):
+        super().__init__()
+        self.pd_previous = []
+
     def on_save_checkpoint(self, trainer, pl_module, checkpoint):
         """Adding PADL saving to the checkpointing in Pytorch Lightning. It will save both at
         `dirpath` and `best_model_path` as found in `ModelCheckpoint` callback. """
@@ -24,7 +28,19 @@ class OnCheckpointSavePadl(Callback):
         else:
             path = best_model_path
 
+        self.pd_previous.append(path+'.padl')
+
+        k = len(trainer.checkpoint_callback.best_k_models) + 1 \
+            if trainer.checkpoint_callback.save_top_k == -1 else trainer.checkpoint_callback.save_top_k
+
+        del_dirpath = None
+        if len(self.pd_previous) == k + 1 and k > 0:
+            del_dirpath = self.pd_previous.pop(0)
+
         pl_module.model.pd_save(path, force_overwrite=True)
+
+        if del_dirpath is not None:
+            shutil.rmtree(del_dirpath)
 
 
 class PADLLightning(pl.LightningModule):
