@@ -1,4 +1,7 @@
+allennlp
 fastai
 transformers[pytorch]
 pytorch-lightning
 padl
+torchserve
+torch-model-archiver
