@@ -5,7 +5,7 @@ import torch
 import padl
 from padl import transform
 
-from padl_ext.pytorch_lightning.prepare import PADLLightning
+from padl_ext.pytorch_lightning.prepare import PadlLightning
 try:
     import pytorch_lightning as pl
     from pytorch_lightning.callbacks import ModelCheckpoint
@@ -56,6 +56,6 @@ def test_padl_lightning(tmp_path):
     train_data = [torch.randn([28, 28])] * 16
     val_data = [torch.randn([28, 28])] * 8
     trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path / 'tmp'), log_every_n_steps=2)
-    padl_lightning = PADLLightning(padl_training_model, train_data=train_data, val_data=val_data,
+    padl_lightning = PadlLightning(padl_training_model, train_data=train_data, val_data=val_data,
                                    batch_size=2, num_workers=0)
     trainer.fit(padl_lightning)

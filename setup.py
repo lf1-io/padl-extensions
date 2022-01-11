@@ -21,6 +21,20 @@ def parse_requirements(filename):
         return [str(requirement) for requirement in pkg_resources.parse_requirements(requirements_txt)]
 
 
+pytorch_lightning_extra = [
+    "pytorch-lightning",
+]
+
+torchserve_extra = [
+    "torchserve",
+    "torch-model-archiver",
+]
+
+huggingface_extra = [
+    "transformers[pytorch]",
+]
+
+
 setuptools.setup(
     name="padl-extensions",
     version=versions['__version__'],
@@ -42,7 +56,15 @@ setuptools.setup(
     python_requires='>=3.8',
     install_requires=parse_requirements('requirements.txt'),
     test_suite="tests",
-    tests_require=parse_requirements('requirements-test.txt'),
+    tests_require=parse_requirements('requirements-test.txt') + pytorch_lightning_extra
+                  + torchserve_extra + huggingface_extra,
     package_data={'': ['requirements.txt']},
     include_package_data=True,
+    extras_require={
+        'all': pytorch_lightning_extra
+               + torchserve_extra + huggingface_extra,
+        'pytorch_lightning': pytorch_lightning_extra,
+        'torchserve': torchserve_extra,
+        'huggingface': huggingface_extra,
+    }
 )

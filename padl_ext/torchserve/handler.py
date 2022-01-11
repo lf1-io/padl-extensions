@@ -17,7 +17,7 @@ class PadlHandler(BaseHandler):
     def initialize(self, context):
         properties = context.system_properties
         model_dir = properties.get('model_dir')
-        logger.warn(model_dir)
+        logger.warning(model_dir)
         m = load(model_dir)
         self._pd_preprocess = m.pd_preprocess
         self._pd_forward = m.pd_forward
