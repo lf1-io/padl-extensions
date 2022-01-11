@@ -80,23 +80,25 @@ class PadlLightning(pl.LightningModule):
             setattr(self, key, layer)
 
     def forward(self, x):
-        """In lightning, forward defines the prediction/inference actions"""
+        """In pytorch lightning, forward defines the prediction/inference actions"""
         return None
 
     def train_dataloader(self):
-        """Create the train dataloader using `pd_get_loader`"""
+        """Create the train dataloader using `padl.transforms.Transform.pd_get_loader`"""
         return self.model.pd_get_loader(self.train_data, self.model.pd_preprocess, 'train',
                                         **self.loader_kwargs)
 
     def val_dataloader(self):
-        """Create the val dataloader using `pd_get_loader` if *self.val_data* is provided"""
+        """Create the val dataloader using `padl.transforms.Transform.pd_get_loader`
+        if *self.val_data* is provided"""
         if self.val_data is not None:
             return self.model.pd_get_loader(self.val_data, self.model.pd_preprocess, 'eval',
                                             **self.loader_kwargs)
         return None
 
     def test_dataloader(self):
-        """Create the test dataloader using `pd_get_loader` if *self.test_data* is provided"""
+        """Create the test dataloader using `padl.transforms.Transform.pd_get_loader`
+        if *self.test_data* is provided"""
         if self.test_data is not None:
             return self.model.pd_get_loader(self.test_data, self.model.pd_preprocess, 'eval',
                                             **self.loader_kwargs)
@@ -119,8 +121,8 @@ class PadlLightning(pl.LightningModule):
         self.log("test_loss", loss)
 
     def configure_callbacks(self):
-        """When passing the LightingModule to the Trainer these callbacks are added to the Trainer
-        callbacks. If there are duplicate callbacks these take precedence over the Trainer
+        """When passing the `pl.LightingModule` to the Trainer these callbacks are added to the
+        Trainer callbacks. If there are duplicate callbacks these take precedence over the Trainer
         callbacks."""
         early_stop = EarlyStopping(monitor="val_loss", mode="min")
         checkpoint = ModelCheckpoint(monitor="val_loss", every_n_val_epochs=1)
