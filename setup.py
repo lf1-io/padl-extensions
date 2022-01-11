@@ -56,7 +56,8 @@ setuptools.setup(
     python_requires='>=3.8',
     install_requires=parse_requirements('requirements.txt'),
     test_suite="tests",
-    tests_require=parse_requirements('requirements-test.txt'),
+    tests_require=parse_requirements('requirements-test.txt') + pytorch_lightning_extra
+                  + torchserve_extra + huggingface_extra,
     package_data={'': ['requirements.txt']},
     include_package_data=True,
     extras_require={
