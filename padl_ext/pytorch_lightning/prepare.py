@@ -121,9 +121,9 @@ class PadlLightning(pl.LightningModule):
         self.log("test_loss", loss)
 
     def configure_callbacks(self):
-        """When passing the `pl.LightingModule` to the Trainer these callbacks are added to the
-        Trainer callbacks. If there are duplicate callbacks these take precedence over the Trainer
-        callbacks."""
+        """When passing the `pl.LightingModule` to the `pl.Trainer` these callbacks are added to the
+        `pl.Trainer` callbacks. If there are duplicate callbacks these take precedence over the
+        `pl.Trainer` callbacks."""
         early_stop = EarlyStopping(monitor="val_loss", mode="min")
         checkpoint = ModelCheckpoint(monitor="val_loss", every_n_val_epochs=1)
         return [early_stop, checkpoint, OnCheckpointSavePadl()]
