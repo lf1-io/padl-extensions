@@ -5,6 +5,10 @@ import torch
 
 @transform
 class GenericPadder:
+    """Pads the last dimension of each output in *dictionary_1* to length *padding_length*
+
+    :param padding_length: padding length
+    """
     def __init__(self, padding_length):
         self.padding_length = padding_length
 
@@ -20,31 +24,45 @@ class GenericPadder:
 
 
 @transform
-def mysqueeze(dictionary_2):
+def mysqueeze(preprocess_output: dict):
+    """Squeeze each of the outputs in *preprocess_output*
+
+    :param preprocess_output: dictionary of preprocessing outputs
+    """
     output = {}
-    for k in dictionary_2.items():
-        output[k] = dictionary_2[k][0]
+    # FIXME Is this meant to be dictionary_2.keys()?
+    for k in preprocess_output.items():
+        output[k] = preprocess_output[k][0]
     return output
 
 
 @transform
-def myunsqueeze(model_output):
+def myunsqueeze(model_output: dict):
+    """Unsqueeze each of the outputs in *model_output*
+
+    :param model_output: dictionary of model outputs
+    """
     return {k: model_output[k].unsqueeze(0) for k in model_output}
 
 
-def to_padl(pl, padding_length=20):
-    pl = pipeline(pl)
+def to_padl(hug_task: str, padding_length: int = 20):
+    """Convert Huggingface pipeline to a PADL pipeline
+
+    :param hug_task: Huggingface task specifying the pipeline
+    :param padding_length: padding length used when running `padl.Transform.eval_apply` and
+        `padl.Transform.train_apply`
+    """
+    hug_pipeline = pipeline(hug_task)
     padder = GenericPadder(padding_length)
-    t = (
-        transform(pl.preprocess)
+    return (
+        transform(hug_pipeline.preprocess)
         >> mysqueeze
         >> IfInfer(identity, padder)
         >> batch
         >> transform(lambda x: list(x.values()))
-        >> transform(pl.model)
+        >> transform(hug_pipeline.model)
         >> transform(lambda x: dict(x))
         >> unbatch
         >> myunsqueeze
-        >> transform(pl.postprocess)
+        >> transform(hug_pipeline.postprocess)
     )
-    return t
