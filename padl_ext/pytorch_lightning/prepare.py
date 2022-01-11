@@ -40,7 +40,7 @@ class OnCheckpointSavePadl(Callback):
             shutil.rmtree(del_dirpath)
 
 
-class PADLLightning(pl.LightningModule):
+class PadlLightning(pl.LightningModule):
     """Connector to Pytorch Lightning
 
     :param padl_model: PADL transform to be trained
