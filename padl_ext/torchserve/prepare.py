@@ -64,10 +64,10 @@ def prepare_and_serve(target_model, version='1.0', force=False, foreground=True)
 
     if force:
         prepare(target_model, version=version, force=force)
-    elif not os.path.exists(mar_name):
+    elif not os.path.exists(model_parent + '/' + mar_name):
         prepare(target_model, version=version, force=force)
     else:
-        print(f'Torch model archive already exists for {target_model}, skipping archiving.')
+        print(f'Torch model archive already exists for {target_model}, skipping archiving...')
 
     print(f'converting {model_name} to MAR format...')
     print('Serving the model...')
