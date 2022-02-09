@@ -17,7 +17,7 @@ class OnCheckpointSavePadl(Callback):
     def on_save_checkpoint(self, trainer, pl_module, checkpoint):
         """Adding PADL saving to the checkpointing in Pytorch Lightning. It will save both at
         `dirpath` and `best_model_path` as found in `ModelCheckpoint` callback. """
-        # TODO This relies on dictionary ordering to correct
+        # TODO This relies on dictionary ordering to be correct
         best_k_model_paths = list(trainer.checkpoint_callback.best_k_models)
         best_k_model_paths = [x.replace(Path(x).suffix, '') for x in best_k_model_paths]
         dirpath = trainer.checkpoint_callback.dirpath
@@ -106,18 +106,18 @@ class PadlLightning(pl.LightningModule):
 
     def training_step(self, batch, batch_idx):
         """Default training step"""
-        loss = self.model.pd_forward.pd_call_transform(batch, 'train')
+        loss = self.model.pd_forward.pd_call_in_mode(batch, 'train')
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
         """Default validation step"""
-        loss = self.model.pd_forward.pd_call_transform(batch, 'eval')
+        loss = self.model.pd_forward.pd_call_in_mode(batch, 'eval')
         self.log("val_loss", loss)
 
     def test_step(self, batch, batch_idx):
         """Default test step"""
-        loss = self.model.pd_forward.pd_call_transform(batch, 'eval')
+        loss = self.model.pd_forward.pd_call_in_mode(batch, 'eval')
         self.log("test_loss", loss)
 
     def configure_callbacks(self):
