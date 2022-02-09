@@ -6,6 +6,8 @@
 # PADL-Extensions
 Trainers, monitors, connectors for PADL
 
+**PADL** was developed at [LF1](https://lf1.io/), an AI innovation lab based in Berlin, Germany.
+
 ## Installation
 ```
 pip install padl-extensions
