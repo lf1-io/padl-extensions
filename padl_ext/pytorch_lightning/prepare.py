@@ -10,8 +10,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint, Callback
 
 
 class OnCheckpointSavePadl(Callback):
-    """`OnCheckpointSavePadl` is used to overwrite the `on_save_checkpoint` of `ModelCheckpoint` so
-    that the model is saved in the PADL format."""
+    """`OnCheckpointSavePadl` is used to create an `on_save_checkpoint` callback
+    so that the model is saved in the PADL format. This works in addition to the `ModelCheckpoint`
+    callback which will still save the pytorch lighting ckpt file. """
     def __init__(self):
         super().__init__()
         self.pd_previous = []
@@ -169,6 +170,8 @@ class DefaultPadlLightning(BasePadlLightning):
         """When passing the `pl.LightingModule` to the `pl.Trainer` these callbacks are added to the
         `pl.Trainer` callbacks. If there are duplicate callbacks these take precedence over the
         `pl.Trainer` callbacks."""
+        # TODO Can't use default ModelCheckpoint currently b/c padl saving relies on monitor
+        #  value being set.
         checkpoint = ModelCheckpoint(monitor="val_loss", every_n_epochs=1, save_top_k=1)
         return [checkpoint, OnCheckpointSavePadl()]
 
