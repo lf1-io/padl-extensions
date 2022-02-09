@@ -1,2 +1,2 @@
-padl==0.2.0
+padl>=0.2.0
 torch
