@@ -37,7 +37,6 @@ class OnCheckpointSavePadl(Callback):
         if len(self.pd_previous) == k + 1 and k > 0:
             del_dirpath = self.pd_previous.pop(0)
         if del_dirpath is not None:
-            print(f"Removing directory {del_dirpath}")
             shutil.rmtree(del_dirpath)
 
 
@@ -141,7 +140,7 @@ class PadlLightning(pl.LightningModule):
         `pl.Trainer` callbacks. If there are duplicate callbacks these take precedence over the
         `pl.Trainer` callbacks."""
         early_stop = EarlyStopping(monitor="val_loss", mode="min")
-        checkpoint = ModelCheckpoint(monitor="val_loss", every_n_val_epochs=1)
+        checkpoint = ModelCheckpoint(monitor="val_loss", every_n_epochs=1, save_top_k=1)
         return [early_stop, checkpoint, OnCheckpointSavePadl()]
 
     def configure_optimizers(self):

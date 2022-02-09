@@ -22,7 +22,7 @@ def parse_requirements(filename):
 
 
 pytorch_lightning_extra = [
-    "pytorch-lightning",
+    "pytorch-lightning>=1.5.2",
 ]
 
 torchserve_extra = [
