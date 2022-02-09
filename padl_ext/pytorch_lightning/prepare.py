@@ -37,6 +37,7 @@ class OnCheckpointSavePadl(Callback):
         if len(self.pd_previous) == k + 1 and k > 0:
             del_dirpath = self.pd_previous.pop(0)
         if del_dirpath is not None:
+            print(f"Removing directory {del_dirpath}")
             shutil.rmtree(del_dirpath)
 
 
