@@ -6,10 +6,12 @@ from pathlib import Path
 import torch
 
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint, Callback
+from pytorch_lightning.callbacks import ModelCheckpoint, Callback
 
 
 class OnCheckpointSavePadl(Callback):
+    """`OnCheckpointSavePadl` is used to overwrite the `on_save_checkpoint` of `ModelCheckpoint` so
+    that the model is saved in the PADL format."""
     def __init__(self):
         super().__init__()
         self.pd_previous = []
@@ -40,7 +42,7 @@ class OnCheckpointSavePadl(Callback):
             shutil.rmtree(del_dirpath)
 
 
-class PadlLightning(pl.LightningModule):
+class BasePadlLightning(pl.LightningModule):
     """Connector to Pytorch Lightning
 
     :param padl_model: PADL transform to be trained
@@ -56,13 +58,11 @@ class PadlLightning(pl.LightningModule):
         train_data,
         val_data=None,
         test_data=None,
-        learning_rate=1e-3,
         **kwargs
     ):
         super().__init__()
         self.model = padl_model
         self.train_data = train_data
-        self.learning_rate = learning_rate
         self.val_data = val_data
         self.test_data = test_data
         self.loader_kwargs = kwargs
@@ -135,13 +135,42 @@ class PadlLightning(pl.LightningModule):
         loss = self.model.pd_forward.pd_call_in_mode(batch, 'eval')
         self.log("test_loss", loss)
 
+
+class DefaultPadlLightning(BasePadlLightning):
+    """The default connector to Pytorch Lightning that includes a default optimizer (Adam) and
+    a default `ModelCheckpoint` callback to save the `padl_model`.
+
+    :param padl_model: PADL transform to be trained
+    :param learning_rate: learning rate
+    :param train_data: list of training data points
+    :param val_data: list of validation data points
+    :param test_data: list of test data points
+    :param kwargs: loader key word arguments for the DataLoader
+    """
+    def __init__(
+        self,
+        padl_model,
+        learning_rate,
+        train_data,
+        val_data=None,
+        test_data=None,
+        **kwargs
+    ):
+        super().__init__(
+            padl_model=padl_model,
+            train_data=train_data,
+            val_data=val_data,
+            test_data=test_data,
+            **kwargs
+        )
+        self.learning_rate = learning_rate
+
     def configure_callbacks(self):
         """When passing the `pl.LightingModule` to the `pl.Trainer` these callbacks are added to the
         `pl.Trainer` callbacks. If there are duplicate callbacks these take precedence over the
         `pl.Trainer` callbacks."""
-        early_stop = EarlyStopping(monitor="val_loss", mode="min")
         checkpoint = ModelCheckpoint(monitor="val_loss", every_n_epochs=1, save_top_k=1)
-        return [early_stop, checkpoint, OnCheckpointSavePadl()]
+        return [checkpoint, OnCheckpointSavePadl()]
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
