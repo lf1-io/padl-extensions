@@ -2,8 +2,7 @@ import sys
 import pytest
 import torch
 
-import padl
-from padl import transform
+from padl import transform, identity
 
 from padl_ext.pytorch_lightning.prepare import PadlLightning
 try:
@@ -50,7 +49,7 @@ def test_padl_lightning(tmp_path):
     autoencoder = PadlEncoder() >> PadlDecoder()
     padl_training_model = (
         transform(lambda x: x.view(x.size(0), -1))
-        >> autoencoder + padl.identity
+        >> autoencoder + identity
         >> padl_loss
     )
     train_data = [torch.randn([28, 28])] * 16
