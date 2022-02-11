@@ -3,6 +3,7 @@
 import os
 import shutil
 from pathlib import Path
+import padl
 import torch
 
 import pytorch_lightning as pl
@@ -32,7 +33,7 @@ class OnCheckpointSavePadl(Callback):
 
         if path not in self.pd_previous:
             self.pd_previous.append(path)
-            pl_module.model.pd_save(path, force_overwrite=True)
+            pl_module.padl_model.pd_save(path, force_overwrite=True)
 
         k = len(trainer.checkpoint_callback.best_k_models) + 1 \
             if trainer.checkpoint_callback.save_top_k == -1 else trainer.checkpoint_callback.save_top_k
@@ -46,7 +47,7 @@ class OnCheckpointSavePadl(Callback):
 class BasePadlLightning(pl.LightningModule):
     """Connector to Pytorch Lightning
 
-    :param padl_model: PADL transform to be trained
+    :param padl_model: PADL transform. Can provide a string path to load a PADL transform.
     :param train_data: list of training data points
     :param val_data: list of validation data points
     :param test_data: list of test data points
@@ -55,23 +56,32 @@ class BasePadlLightning(pl.LightningModule):
     """
     def __init__(
         self,
-        padl_model,
-        train_data,
+        padl_model=None,
+        train_data=None,
         val_data=None,
         test_data=None,
         **kwargs
     ):
         super().__init__()
-        self.model = padl_model
+
+        if isinstance(padl_model, str):
+            padl_model = padl.load(padl_model)
+        elif isinstance(padl_model, padl.transforms.Transform):
+            padl_model = padl_model
+        else:
+            raise TypeError('Please provide a PADL transform or a str path to load a '
+                            'PADL transform')
+        self.padl_model = padl_model
+
         self.train_data = train_data
         self.val_data = val_data
         self.test_data = test_data
         self.loader_kwargs = kwargs
 
-        self.model.pd_forward_device_check()
+        self.padl_model.pd_forward_device_check()
 
         # Set Pytorch layers as attributes from PADL model
-        layers = self.model.pd_layers
+        layers = self.padl_model.pd_layers
         for i, layer in enumerate(layers):
             key = f'{layer.__class__.__name__}'
             counter = 0
@@ -85,24 +95,26 @@ class BasePadlLightning(pl.LightningModule):
         return None
 
     def train_dataloader(self):
-        """Create the train dataloader using `padl.transforms.Transform.pd_get_loader`"""
-        return self.model.pd_get_loader(self.train_data, self.model.pd_preprocess, 'train',
-                                        **self.loader_kwargs)
+        """Create the train dataloader using `padl.transforms.Transform.pd_get_loader`
+        if *self.val_data* is provided"""
+        if self.train_data is not None:
+            return self.padl_model.pd_get_loader(self.train_data, self.padl_model.pd_preprocess,
+                                                 'train', **self.loader_kwargs)
 
     def val_dataloader(self):
         """Create the val dataloader using `padl.transforms.Transform.pd_get_loader`
         if *self.val_data* is provided"""
         if self.val_data is not None:
-            return self.model.pd_get_loader(self.val_data, self.model.pd_preprocess, 'eval',
-                                            **self.loader_kwargs)
+            return self.padl_model.pd_get_loader(self.val_data, self.padl_model.pd_preprocess,
+                                                 'eval', **self.loader_kwargs)
         return None
 
     def test_dataloader(self):
         """Create the test dataloader using `padl.transforms.Transform.pd_get_loader`
         if *self.test_data* is provided"""
         if self.test_data is not None:
-            return self.model.pd_get_loader(self.test_data, self.model.pd_preprocess, 'eval',
-                                            **self.loader_kwargs)
+            return self.padl_model.pd_get_loader(self.test_data, self.padl_model.pd_preprocess,
+                                                 'eval', **self.loader_kwargs)
         return None
 
     def training_step(self, batch, batch_idx):
@@ -112,7 +124,7 @@ class BasePadlLightning(pl.LightningModule):
             (idx, batch). We only need the batch here.
         """
         _, batch = batch
-        loss = self.model.pd_forward.pd_call_in_mode(batch, 'train')
+        loss = self.padl_model.pd_forward.pd_call_in_mode(batch, 'train')
         self.log("train_loss", loss)
         return loss
 
@@ -123,7 +135,7 @@ class BasePadlLightning(pl.LightningModule):
             (idx, batch). We only need the batch here.
         """
         _, batch = batch
-        loss = self.model.pd_forward.pd_call_in_mode(batch, 'eval')
+        loss = self.padl_model.pd_forward.pd_call_in_mode(batch, 'eval')
         self.log("val_loss", loss)
 
     def test_step(self, batch, batch_idx):
@@ -133,7 +145,7 @@ class BasePadlLightning(pl.LightningModule):
             (idx, batch). We only need the batch here.
         """
         _, batch = batch
-        loss = self.model.pd_forward.pd_call_in_mode(batch, 'eval')
+        loss = self.padl_model.pd_forward.pd_call_in_mode(batch, 'eval')
         self.log("test_loss", loss)
 
 
