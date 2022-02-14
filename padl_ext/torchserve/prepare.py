@@ -1,5 +1,6 @@
 import os
 import subprocess
+import pathlib
 
 
 def prepare(target_model, version='1.0', force=False):
@@ -8,13 +9,15 @@ def prepare(target_model, version='1.0', force=False):
     :param target_model: PADL serialized model - `.padl`
     :param version: version of model
     :param force: if force=True, existing archive file is overwritten
-    :return:
     """
-    current_directory = '/'.join(__file__.split('/')[:-1])
-    handler_dir = os.path.join(current_directory, 'handler.py')
+
+    target_model = pathlib.Path(target_model)
+    model_parent = target_model.parents[0]
+    model_name = target_model.stem
+    current_directory = pathlib.Path(__file__).parent
+    handler_dir = current_directory/'handler.py'
+
     print(f'handler is {handler_dir}')
-    model_parent = '/'.join(target_model.split('/')[:-1])
-    model_name = target_model.split('/')[-1].split('.padl')[0]
     print(f'converting {model_name} to MAR format...')
 
     cmd = [
@@ -45,8 +48,6 @@ def serve(model_store,
     :param ts_config: Configuration file for TorchServe
     :param workflow_store: Workflow store location where workflow can be loaded. Defaults to model_store
     :param log_config: Log4j configuration file for TorchServe
-
-    :return:
     """
     cmd = [
         'torchserve',
@@ -88,15 +89,15 @@ def prepare_and_serve(target_model,
     :param ts_config: Configuration file for TorchServe
     :param workflow_store: Workflow store location for TorchServe where workflow can be loaded. Defaults to model_store
     :param log_config: Log4j configuration file for TorchServe
-    :return:
     """
-    model_parent = '/'.join(target_model.split('/')[:-1])
-    model_name = target_model.split('/')[-1].split('.padl')[0]
-    mar_name = model_name + '.mar'
+    target_model = pathlib.Path(target_model)
+    model_parent = target_model.parent
+    model_name = target_model.stem
+    mar_name = pathlib.Path(f'{model_name}.mar')
 
     if force:
         prepare(target_model, version=version, force=force)
-    elif not os.path.exists(model_parent + '/' + mar_name):
+    elif not os.path.exists(model_parent/mar_name):
         prepare(target_model, version=version, force=force)
     else:
         print(f'Torch model archive already exists for {target_model}, skipping archiving...')
