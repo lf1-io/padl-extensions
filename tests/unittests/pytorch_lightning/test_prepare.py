@@ -1,6 +1,7 @@
-import sys
 import pytest
 import torch
+
+from tests.material import utils
 
 from padl import transform, identity
 
@@ -43,8 +44,8 @@ def padl_loss(reconstruction, original):
     return torch.nn.functional.mse_loss(reconstruction, original)
 
 
-@pytest.mark.skipif('pytorch_lightning' not in sys.modules,
-                    reason="requires the Pytorch Lightning library")
+@pytest.mark.skipif((not utils.check_if_module_installed('pytorch_lightning')),
+                    reason="requires the torchserve and torch-model-archiver")
 def test_padl_lightning(tmp_path):
     autoencoder = PadlEncoder() >> PadlDecoder()
     padl_training_model = (
