@@ -36,8 +36,8 @@ def postprocess(x):
     return torch.argmax(torch.nn.Softmax(dim=1)(x), dim=1)
 
 
-@pytest.mark.skipif((not utils._check_if_module_installed('torchserve')) and \
-                    (not utils._check_if_module_installed("torch-model-archiver")),
+@pytest.mark.skipif((not utils.check_if_module_installed('torchserve')) and \
+                    (not utils.check_if_module_installed("torch-model-archiver")),
                     reason="requires the torchserve and torch-model-archiver")
 class TestTorchServe:
     @pytest.fixture(autouse=True, scope='class')

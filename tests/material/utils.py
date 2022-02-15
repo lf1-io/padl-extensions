@@ -2,7 +2,7 @@ import sys
 from importlib.metadata import DistributionFinder
 
 
-def _check_if_module_installed(module_name):
+def check_if_module_installed(module_name):
     """Check if a module is installed.
 
     :param module_name: Name of Module
