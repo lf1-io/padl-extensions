@@ -9,7 +9,7 @@ from padl_ext.pytorch_lightning.prepare import PadlLightning
 try:
     import pytorch_lightning as pl
     from pytorch_lightning.callbacks import ModelCheckpoint
-except ImportError:
+except (ImportError, ModuleNotFoundError):
     pass
 
 
