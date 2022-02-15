@@ -95,9 +95,7 @@ def prepare_and_serve(target_model,
     model_name = target_model.stem
     mar_name = pathlib.Path(f'{model_name}.mar')
 
-    if force:
-        prepare(target_model, version=version, force=force)
-    elif not os.path.exists(model_parent/mar_name):
+    if force or (not os.path.exists(model_parent/mar_name)):
         prepare(target_model, version=version, force=force)
     else:
         print(f'Torch model archive already exists for {target_model}, skipping archiving...')
