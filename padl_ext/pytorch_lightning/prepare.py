@@ -43,6 +43,9 @@ class OnCheckpointSavePadl(Callback):
         if del_dirpath is not None:
             shutil.rmtree(del_dirpath)
 
+        # This will get saved in the Pytorch Lightning ckpt and is needed for reloading the ckpt
+        checkpoint['padl_model'] = path
+
 
 class BasePadlLightning(pl.LightningModule):
     """Connector to Pytorch Lightning
@@ -66,9 +69,7 @@ class BasePadlLightning(pl.LightningModule):
 
         if isinstance(padl_model, str):
             padl_model = padl.load(padl_model)
-        elif isinstance(padl_model, padl.transforms.Transform):
-            padl_model = padl_model
-        else:
+        elif not isinstance(padl_model, padl.transforms.Transform):
             raise TypeError('Please provide a PADL transform or a str path to load a '
                             'PADL transform')
         self.padl_model = padl_model
