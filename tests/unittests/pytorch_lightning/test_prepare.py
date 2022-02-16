@@ -6,7 +6,7 @@ from tests.material import utils
 import padl
 from padl import transform, identity
 
-from padl_ext.pytorch_lightning.prepare import DefaultPadlLightning
+from padl_ext.pytorch_lightning.prepare import PadlLightning
 try:
     import pytorch_lightning as pl
     from pytorch_lightning.callbacks import ModelCheckpoint
@@ -45,6 +45,12 @@ def padl_loss(reconstruction, original):
     return torch.nn.functional.mse_loss(reconstruction, original)
 
 
+class MyModule(PadlLightning):
+    def configure_optimizers(self):
+        optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
+        return optimizer
+
+
 @pytest.mark.skipif((not utils.check_if_module_installed('pytorch_lightning')),
                     reason="requires the torchserve and torch-model-archiver")
 class TestPadlLightning:
@@ -59,32 +65,29 @@ class TestPadlLightning:
         request.cls.transform_1 = padl_training_model
         request.cls.train_data = [torch.randn([28, 28])] * 16
         request.cls.val_data = [torch.randn([28, 28])] * 8
+        request.cls.padl_lightning = MyModule(
+            self.transform_1, train_data=self.train_data,
+            val_data=self.val_data, batch_size=2, num_workers=0)
 
     def test_training(self, tmp_path):
-        padl_lightning = DefaultPadlLightning(
-            self.transform_1, learning_rate=1e-3, train_data=self.train_data,
-            val_data=self.val_data, batch_size=2, num_workers=0)
         trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
-        trainer.fit(padl_lightning)
+        trainer.fit(self.padl_lightning)
 
     def test_training_from_load(self, tmp_path):
         model_dir = str(tmp_path / 'model.padl')
         padl.save(self.transform_1, model_dir)
-        padl_lightning = DefaultPadlLightning(
-            model_dir, learning_rate=1e-3, train_data=self.train_data,
+        padl_lightning = MyModule(
+            model_dir, train_data=self.train_data,
             val_data=self.val_data, batch_size=2, num_workers=0)
         trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
         trainer.fit(padl_lightning)
 
     def test_reload_checkpoint(self, tmp_path):
-        padl_lightning = DefaultPadlLightning(
-            self.transform_1, learning_rate=1e-3, train_data=self.train_data,
-            val_data=self.val_data, batch_size=2, num_workers=0)
         trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
-        trainer.fit(padl_lightning)
-        pl_module = DefaultPadlLightning.load_from_checkpoint(
+        trainer.fit(self.padl_lightning)
+        pl_module = MyModule.load_from_checkpoint(
             trainer.checkpoint_callback.best_model_path,
             padl_model=trainer.checkpoint_callback.best_model_path.replace('.ckpt', '.padl'),
-            learning_rate=1e-4,
             train_data=self.train_data,
         )
+        trainer.fit(pl_module)

@@ -3,19 +3,17 @@
 import shutil
 from pathlib import Path
 import padl
-import torch
 
 import pytorch_lightning as pl
 
 
-class BasePadlLightning(pl.LightningModule):
+class PadlLightning(pl.LightningModule):
     """Connector to Pytorch Lightning
 
     :param padl_model: PADL transform. Can provide a string path to load a PADL transform.
     :param train_data: list of training data points
     :param val_data: list of validation data points
     :param test_data: list of test data points
-    :param learning_rate: learning rate
     :param kwargs: loader key word arguments for the DataLoader
     """
     def __init__(
@@ -150,37 +148,4 @@ class BasePadlLightning(pl.LightningModule):
             shutil.rmtree(del_dirpath)
 
         # This will get saved in the Pytorch Lightning ckpt and is needed for reloading the ckpt
-        checkpoint['padl_model'] = path
-
-
-class DefaultPadlLightning(BasePadlLightning):
-    """The default connector to Pytorch Lightning that includes a default optimizer (Adam).
-
-    :param padl_model: PADL transform to be trained
-    :param learning_rate: learning rate
-    :param train_data: list of training data points
-    :param val_data: list of validation data points
-    :param test_data: list of test data points
-    :param kwargs: loader key word arguments for the DataLoader
-    """
-    def __init__(
-        self,
-        padl_model,
-        learning_rate,
-        train_data,
-        val_data=None,
-        test_data=None,
-        **kwargs
-    ):
-        super().__init__(
-            padl_model=padl_model,
-            train_data=train_data,
-            val_data=val_data,
-            test_data=test_data,
-            **kwargs
-        )
-        self.learning_rate = learning_rate
-
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        return optimizer
+        checkpoint['padl_models'] = self.pd_previous
