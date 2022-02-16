@@ -1,50 +1,11 @@
 """Connector to Pytorch Lightning"""
 
-import os
 import shutil
 from pathlib import Path
 import padl
 import torch
 
 import pytorch_lightning as pl
-from pytorch_lightning.callbacks import ModelCheckpoint, Callback
-
-
-class OnCheckpointSavePadl(Callback):
-    """`OnCheckpointSavePadl` is used to create an `on_save_checkpoint` callback
-    so that the model is saved in the PADL format. This works in addition to the `ModelCheckpoint`
-    callback which will still save the pytorch lighting ckpt file. """
-    def __init__(self):
-        super().__init__()
-        self.pd_previous = []
-
-    def on_save_checkpoint(self, trainer, pl_module, checkpoint):
-        """Adding PADL saving to the checkpointing in Pytorch Lightning. It will save both at
-        `dirpath` and `best_model_path` as found in `ModelCheckpoint` callback. """
-        # TODO This relies on dictionary ordering to be correct
-        best_k_model_paths = list(trainer.checkpoint_callback.best_k_models)
-        best_k_model_paths = [x.replace(Path(x).suffix, '') for x in best_k_model_paths]
-        dirpath = trainer.checkpoint_callback.dirpath
-
-        if len(best_k_model_paths) == 0:
-            path = os.path.join(dirpath, 'model.padl')
-        else:
-            path = best_k_model_paths[-1] + '.padl'
-
-        if path not in self.pd_previous:
-            self.pd_previous.append(path)
-            pl_module.padl_model.pd_save(path, force_overwrite=True)
-
-        k = len(trainer.checkpoint_callback.best_k_models) + 1 \
-            if trainer.checkpoint_callback.save_top_k == -1 else trainer.checkpoint_callback.save_top_k
-        del_dirpath = None
-        if len(self.pd_previous) == k + 1 and k > 0:
-            del_dirpath = self.pd_previous.pop(0)
-        if del_dirpath is not None:
-            shutil.rmtree(del_dirpath)
-
-        # This will get saved in the Pytorch Lightning ckpt and is needed for reloading the ckpt
-        checkpoint['padl_model'] = path
 
 
 class BasePadlLightning(pl.LightningModule):
@@ -59,8 +20,8 @@ class BasePadlLightning(pl.LightningModule):
     """
     def __init__(
         self,
-        padl_model=None,
-        train_data=None,
+        padl_model,
+        train_data,
         val_data=None,
         test_data=None,
         **kwargs
@@ -78,6 +39,7 @@ class BasePadlLightning(pl.LightningModule):
         self.val_data = val_data
         self.test_data = test_data
         self.loader_kwargs = kwargs
+        self.pd_previous = []
 
         self.padl_model.pd_forward_device_check()
 
@@ -149,10 +111,50 @@ class BasePadlLightning(pl.LightningModule):
         loss = self.padl_model.pd_forward.pd_call_in_mode(batch, 'eval')
         self.log("test_loss", loss)
 
+    def on_save_checkpoint(self, checkpoint):
+        """Adding PADL saving to the `model.on_save_checkpoint` callback
+        so that `padl_model` is saved in the PADL format. This works in addition to the
+        `ModelCheckpoint` callback which will still save the pytorch lightning ckpt file. """
+        callback_state_keys = checkpoint['callbacks'].keys()
+        callback_state_keys = [str(k) for k in callback_state_keys]
+        checkpoint_callback_key = [k for k in callback_state_keys if 'ModelCheckpoint' in k][0]
+        checkpoint_callback = checkpoint['callbacks'][checkpoint_callback_key]
+
+        best_model_path = checkpoint_callback.get('best_model_path')
+        best_model_path = best_model_path.replace(Path(best_model_path).suffix, '')
+
+        best_k_model_paths = checkpoint_callback.get('best_k_models')
+        if best_k_model_paths is not None:
+            best_k_model_paths = [x.replace(Path(x).suffix, '') for x in best_k_model_paths.keys()]
+        else:
+            best_k_model_paths = []
+
+        if len(best_k_model_paths) == 0:
+            path = best_model_path + '.padl'
+        else:
+            path = best_k_model_paths[-1] + '.padl'
+
+        if path not in self.pd_previous:
+            self.pd_previous.append(path)
+            self.padl_model.pd_save(path, force_overwrite=True)
+
+        if len(best_k_model_paths) == 0:
+            k = 1
+        else:
+            k = len(best_k_model_paths)
+
+        del_dirpath = None
+        if len(self.pd_previous) == k + 1:
+            del_dirpath = self.pd_previous.pop(0)
+        if del_dirpath is not None:
+            shutil.rmtree(del_dirpath)
+
+        # This will get saved in the Pytorch Lightning ckpt and is needed for reloading the ckpt
+        checkpoint['padl_model'] = path
+
 
 class DefaultPadlLightning(BasePadlLightning):
-    """The default connector to Pytorch Lightning that includes a default optimizer (Adam) and
-    a default `ModelCheckpoint` callback to save the `padl_model`.
+    """The default connector to Pytorch Lightning that includes a default optimizer (Adam).
 
     :param padl_model: PADL transform to be trained
     :param learning_rate: learning rate
@@ -178,15 +180,6 @@ class DefaultPadlLightning(BasePadlLightning):
             **kwargs
         )
         self.learning_rate = learning_rate
-
-    def configure_callbacks(self):
-        """When passing the `pl.LightingModule` to the `pl.Trainer` these callbacks are added to the
-        `pl.Trainer` callbacks. If there are duplicate callbacks these take precedence over the
-        `pl.Trainer` callbacks."""
-        # TODO Can't use default ModelCheckpoint currently b/c padl saving relies on monitor
-        #  value being set.
-        checkpoint = ModelCheckpoint(monitor="val_loss", every_n_epochs=1, save_top_k=1)
-        return [checkpoint, OnCheckpointSavePadl()]
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
