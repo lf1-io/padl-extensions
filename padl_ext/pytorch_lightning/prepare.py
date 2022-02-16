@@ -89,11 +89,15 @@ class PadlLightning(pl.LightningModule):
 
         # Set Pytorch layers as attributes from PADL model
         layers = self.padl_model.pd_layers
-        for i, layer in enumerate(layers):
-            key = f'{layer.__class__.__name__}'
+        for layer in layers:
+            if layer.pd_name is not None:
+                prefix = f'{layer.pd_name}'
+            else:
+                prefix = f'{layer.__class__.__name__}'
+            key = prefix
             counter = 0
             while hasattr(self, key):
-                key = f'{layer.__class__.__name__}_{counter}'
+                key = f'{prefix}_{counter}'
                 counter += 1
             setattr(self, key, layer)
 
