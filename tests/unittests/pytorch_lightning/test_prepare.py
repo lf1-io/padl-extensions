@@ -3,6 +3,7 @@ import torch
 
 from tests.material import utils
 
+import padl
 from padl import transform, identity
 
 from padl_ext.pytorch_lightning.prepare import DefaultPadlLightning
@@ -46,17 +47,33 @@ def padl_loss(reconstruction, original):
 
 @pytest.mark.skipif((not utils.check_if_module_installed('pytorch_lightning')),
                     reason="requires the torchserve and torch-model-archiver")
-def test_padl_lightning(tmp_path):
-    autoencoder = PadlEncoder() >> PadlDecoder()
-    padl_training_model = (
-        transform(lambda x: x.view(x.size(0), -1))
-        >> autoencoder + identity
-        >> padl_loss
-    )
-    train_data = [torch.randn([28, 28])] * 16
-    val_data = [torch.randn([28, 28])] * 8
-    trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path / 'tmp'), log_every_n_steps=2)
-    padl_lightning = DefaultPadlLightning(
-        padl_training_model, learning_rate=1e-3, train_data=train_data,
-        val_data=val_data, batch_size=2, num_workers=0)
-    trainer.fit(padl_lightning)
+class TestPadlLightning:
+    @pytest.fixture(autouse=True, scope='class')
+    def init(self, request):
+        autoencoder = PadlEncoder() >> PadlDecoder()
+        padl_training_model = (
+                transform(lambda x: x.view(x.size(0), -1))
+                >> autoencoder + identity
+                >> padl_loss
+        )
+        request.cls.transform_1 = padl_training_model
+        request.cls.train_data = [torch.randn([28, 28])] * 16
+        request.cls.val_data = [torch.randn([28, 28])] * 8
+
+    def test_training(self, tmp_path):
+        trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path / 'tmp'),
+                             log_every_n_steps=2)
+        padl_lightning = DefaultPadlLightning(
+            self.transform_1, learning_rate=1e-3, train_data=self.train_data,
+            val_data=self.val_data, batch_size=2, num_workers=0)
+        trainer.fit(padl_lightning)
+
+    def test_training_from_load(self, tmp_path):
+        trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path / 'tmp'),
+                             log_every_n_steps=2)
+        model_dir = str(tmp_path / 'model.padl')
+        padl.save(self.transform_1, model_dir)
+        padl_lightning = DefaultPadlLightning(
+            model_dir, learning_rate=1e-3, train_data=self.train_data,
+            val_data=self.val_data, batch_size=2, num_workers=0)
+        trainer.fit(padl_lightning)
