@@ -4,7 +4,7 @@ import torch
 from tests.material import utils
 
 import padl
-from padl import transform, identity
+from padl import transform, identity, batch
 
 from padl_ext.pytorch_lightning.prepare import PadlLightning
 try:
@@ -58,9 +58,11 @@ class TestPadlLightning:
     def init(self, request):
         autoencoder = PadlEncoder() >> PadlDecoder()
         padl_training_model = (
-                transform(lambda x: x.view(x.size(0), -1))
-                >> autoencoder + identity
-                >> padl_loss
+            identity
+            >> batch
+            >> transform(lambda x: x.view(x.size(0), -1))
+            >> autoencoder + identity
+            >> padl_loss
         )
         request.cls.transform_1 = padl_training_model
         request.cls.train_data = [torch.randn([28, 28])] * 16
@@ -91,3 +93,13 @@ class TestPadlLightning:
             train_data=self.train_data,
         )
         trainer.fit(pl_module)
+
+    # def test_pass_dataloader_to_trainer(self, tmp_path):
+    #     trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
+    #     trainer.fit(self.padl_lightning)
+    #     pl_module = MyModule.load_from_checkpoint(
+    #         trainer.checkpoint_callback.best_model_path,
+    #         padl_model=trainer.checkpoint_callback.best_model_path.replace('.ckpt', '.padl'),
+    #         train_data=self.train_data,
+    #     )
+    #     trainer.fit(pl_module)
