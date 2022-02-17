@@ -1,5 +1,3 @@
-allennlp
-fastai
 transformers[pytorch]
 pytorch-lightning
 torchserve
