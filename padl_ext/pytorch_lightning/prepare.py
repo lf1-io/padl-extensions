@@ -44,9 +44,10 @@ def padl_data_loader(data, padl_model, mode, **kwargs):
 
     :param data: List or iterator of data points to be preprocessed by `padl_model`
     :param padl_model: PADL transform to be used in training
-    :param mode: PADL mode to call the preprocess Transform in
-    :param kwargs: Keyword arguments passed to the data loader (see the pytorch
-        `DataLoader` documentation for details).
+    :param mode: PADL mode to call the preprocess :class:`padl.transforms.Transform` in
+        (can be 'infer', 'eval' or 'train')
+    :param kwargs: Keyword arguments passed to the data loader
+        (see :class:`~torch.utils.data.DataLoader` documentation for details).
     """
     return padl_model.pd_get_loader(data, padl_model.pd_preprocess, mode, **kwargs)
 
