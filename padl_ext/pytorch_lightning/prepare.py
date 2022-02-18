@@ -58,6 +58,7 @@ class PadlLightning(pl.LightningModule):
     :param train_data: list of training data points
     :param val_data: list of validation data points
     :param test_data: list of test data points
+    :param learning_rate: learning rate
     :param kwargs: loader key word arguments for the DataLoader
     """
     def __init__(
