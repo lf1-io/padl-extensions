@@ -1,12 +1,13 @@
 import pytest
 import torch
 
+import padl_ext
 from tests.material import utils
 
 import padl
 from padl import transform, identity, batch
 
-from padl_ext.pytorch_lightning.prepare import PadlLightning, padl_data_loader
+from padl_ext.pytorch_lightning.prepare import LightningModule, padl_data_loader
 try:
     import pytorch_lightning as pl
     from pytorch_lightning.callbacks import ModelCheckpoint
@@ -45,7 +46,7 @@ def padl_loss(reconstruction, original):
     return torch.nn.functional.mse_loss(reconstruction, original)
 
 
-class MyModule(PadlLightning):
+class MyModule(LightningModule):
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=1e-4)
         return optimizer
@@ -78,9 +79,8 @@ class TestPadlLightning:
     def test_training_from_load(self, tmp_path):
         model_dir = str(tmp_path / 'model.padl')
         padl.save(self.transform_1, model_dir)
-        padl_lightning = MyModule(
-            model_dir, train_data=self.train_data,
-            val_data=self.val_data, batch_size=2, num_workers=0)
+        padl_lightning = MyModule(model_dir, train_data=self.train_data,
+                                  val_data=self.val_data, batch_size=2, num_workers=0)
         trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
         trainer.fit(padl_lightning)
 
@@ -100,5 +100,5 @@ class TestPadlLightning:
         val_loader = padl_data_loader(self.val_data, self.transform_1, 'eval',
                                       batch_size=2, num_workers=0)
         trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
-        padl_module = PadlLightning(self.transform_1)
+        padl_module = LightningModule(self.transform_1)
         trainer.fit(padl_module, train_loader, val_loader)

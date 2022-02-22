@@ -1,5 +1,5 @@
 try:
-    from padl_ext.pytorch_lightning.prepare import PadlLightning
+    from padl_ext.pytorch_lightning.prepare import LightningModule
 except ImportError:
     print("Please install pytorch lightning dependencies "
           "(pip install padl-extensions[pytorch_lightning]) to use the connector")

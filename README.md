@@ -30,7 +30,7 @@ pip install -e ".[torchserve]"
 If your model is stored in `checkpoints/model_dir/model.padl`, you can serve it easily with torchserve
 ```python
 from padl_ext import torchserve
-torchserve.prepare_and_serve(("checkpoints/model_dir/model.padl")
+torchserve.prepare_and_serve(("examples/model_dir/model.padl")
 ```
 Default address for inference is: http://127.0.0.1:8080
 If your model needs image file for inferences, you can try: 

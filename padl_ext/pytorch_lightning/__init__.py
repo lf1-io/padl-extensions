@@ -1,1 +1,1 @@
-from padl_ext.pytorch_lightning.prepare import PadlLightning, padl_data_loader
+from padl_ext.pytorch_lightning.prepare import LightningModule, padl_data_loader

@@ -38,7 +38,7 @@ def padl_data_loader(data, padl_model, mode, **kwargs):
     >>> val_data_loader = padl_data_loader(data_list, model, 'eval', batch_size=2)
     >>> isinstance(val_data_loader, DataLoader)
     True
-    >>> padl_lightning = PadlLightning(model)
+    >>> padl_lightning = LightningModule(model)
     >>> trainer = pl.Trainer()
     >>> trainer.fit(padl_lightning, train_data_loader, val_data_loader)
 
@@ -52,7 +52,7 @@ def padl_data_loader(data, padl_model, mode, **kwargs):
     return padl_model.pd_get_loader(data, padl_model.pd_preprocess, mode, **kwargs)
 
 
-class PadlLightning(pl.LightningModule):
+class LightningModule(pl.LightningModule):
     """PADL connector to Pytorch Lightning.
 
     :param padl_model: PADL transform. Can provide a string path to load a PADL transform.
@@ -69,6 +69,7 @@ class PadlLightning(pl.LightningModule):
         val_data=None,
         test_data=None,
         learning_rate=1e-4,
+        inference_model=None,
         **kwargs
     ):
         super().__init__()
@@ -78,6 +79,7 @@ class PadlLightning(pl.LightningModule):
         elif not isinstance(padl_model, padl.transforms.Transform):
             raise TypeError('Please provide a PADL transform or a str path to load a '
                             'PADL transform')
+
         self.padl_model = padl_model
 
         self.train_data = train_data
@@ -102,6 +104,8 @@ class PadlLightning(pl.LightningModule):
                 key = f'{prefix}_{counter}'
                 counter += 1
             setattr(self, key, layer)
+
+        self.inference_model = inference_model
 
     def forward(self, x):
         """In pytorch lightning, forward defines the prediction/inference actions."""
@@ -214,6 +218,9 @@ class PadlLightning(pl.LightningModule):
         if path not in self.pd_previous:
             self.pd_previous.append(path)
             self.padl_model.pd_save(path, force_overwrite=True)
+            if self.inference_model is not None:
+                self.inference_model.pd_save(path.replace('.padl', '.infer.padl') ,
+                                             force_overwrite=True)
 
         if len(best_k_model_paths) == 0:
             k = 1
