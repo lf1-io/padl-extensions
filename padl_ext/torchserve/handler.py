@@ -2,9 +2,11 @@ import json
 import logging
 
 from ts.torch_handler.base_handler import BaseHandler
-from padl import load
+from padl import load, unbatch
+from padl.transforms import Transform
 
 logger = logging.getLogger(__name__)
+
 
 
 class PadlHandler(BaseHandler):
@@ -17,7 +19,7 @@ class PadlHandler(BaseHandler):
     def initialize(self, context):
         properties = context.system_properties
         model_dir = properties.get('model_dir')
-        logger.warn(model_dir)
+        logger.warning(model_dir)
         m = load(model_dir)
         self._pd_preprocess = m.pd_preprocess
         self._pd_forward = m.pd_forward
@@ -31,5 +33,6 @@ class PadlHandler(BaseHandler):
         return self._pd_forward.infer_apply(data)
 
     def postprocess(self, data):
-        output = self._pd_postprocess.infer_apply(data)
+        Transform.pd_mode = 'infer'
+        output =self._pd_postprocess[1:].infer_apply(unbatch(data))
         return [json.dumps(output)]
