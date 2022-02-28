@@ -110,7 +110,7 @@ class Trainer:
                     self.iteration += 1
                     continue
 
-                if self.iteration % valid_interval == 0 and valid_data is not None:
+                if self.iteration and self.iteration % valid_interval == 0 and valid_data is not None:
                     valid_loss = []
                     for output in self.train_model.eval_apply(valid_data, **self.iterate_args):
                         valid_loss.append(output)
