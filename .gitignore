@@ -14,7 +14,6 @@ examples
 /data
 EXPLAINED.md
 .ipynb_checkpoints/
-/*.ipynb
 
 # Linting report
 linter_report.txt
@@ -357,3 +356,14 @@ fabric.properties
 *.code-workspace
 
 # End of https://www.toptal.com/developers/gitignore/api/python,intellij,vscode,pycharm
+
+# jd
+
+/.jd
+/jd.json
+/.syncignore
+/notebooks/test
+/notebooks/data
+/notebooks/*.padl
+/templates/
+/notebooks/transformers
