@@ -1,6 +1,1 @@
-transformers[pytorch]
-pytorch-lightning
-torchserve
-torch-model-archiver
-padl>=0.2.1
-torch
+padl>=0.2.2

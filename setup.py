@@ -21,6 +21,9 @@ def parse_requirements(filename):
         return [str(requirement) for requirement in pkg_resources.parse_requirements(requirements_txt)]
 
 
+all_ = parse_requirements('requirements.txt')
+
+
 pytorch_lightning_extra = [
     "pytorch-lightning>=1.5.2",
 ]
@@ -28,10 +31,6 @@ pytorch_lightning_extra = [
 torchserve_extra = [
     "torchserve",
     "torch-model-archiver",
-]
-
-huggingface_extra = [
-    "transformers[pytorch]",
 ]
 
 
@@ -54,17 +53,17 @@ setuptools.setup(
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
     ],
     python_requires='>=3.8',
-    install_requires=parse_requirements('requirements.txt'),
+    install_requires=all_,
     test_suite="tests",
-    tests_require=parse_requirements('requirements-test.txt') + pytorch_lightning_extra
-                  + torchserve_extra + huggingface_extra,
+    tests_require=all_ + parse_requirements('requirements-test.txt') + pytorch_lightning_extra
+                  + torchserve_extra,
     package_data={'': ['requirements.txt']},
     include_package_data=True,
     extras_require={
-        'all': pytorch_lightning_extra
-               + torchserve_extra + huggingface_extra,
+        'all': all_
+               + pytorch_lightning_extra
+               + torchserve_extra,
         'pytorch_lightning': pytorch_lightning_extra,
         'torchserve': torchserve_extra,
-        'huggingface': huggingface_extra,
     }
 )
