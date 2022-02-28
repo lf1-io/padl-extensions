@@ -15,16 +15,16 @@ pip install padl-extensions
 
 ## Extras Installation
 ```
-pip install padl-extensions[huggingface]
 pip install padl-extensions[pytorch_lightning]
 pip install padl-extensions[torchserve]
+pip install padl-extensions[trainer]
 ```
 
 If you are installing locally use
 ```
-pip install -e ".[huggingface]"
 pip install -e ".[pytorch_lightning]"
 pip install -e ".[torchserve]"
+pip install -e ".[trainer]"
 ```
 
 ## Notebooks on colab
