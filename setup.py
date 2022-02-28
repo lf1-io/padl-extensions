@@ -24,6 +24,9 @@ def parse_requirements(filename):
 all_ = parse_requirements('requirements.txt')
 
 
+trainer_extra = []
+
+
 pytorch_lightning_extra = [
     "pytorch-lightning>=1.5.2",
 ]
@@ -62,8 +65,10 @@ setuptools.setup(
     extras_require={
         'all': all_
                + pytorch_lightning_extra
-               + torchserve_extra,
+               + torchserve_extra
+               + trainer_extra,
         'pytorch_lightning': pytorch_lightning_extra,
         'torchserve': torchserve_extra,
+        'trainer': trainer_extra,
     }
 )
