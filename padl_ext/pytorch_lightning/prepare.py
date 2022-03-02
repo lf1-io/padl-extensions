@@ -52,7 +52,7 @@ def padl_data_loader(data, padl_model, mode, **kwargs):
     return padl_model.pd_get_loader(data, padl_model.pd_preprocess, mode, **kwargs)
 
 
-# @padl.transform
+@padl.transform
 class LightningModule(pl.LightningModule):
     """PADL connector to Pytorch Lightning.
 
