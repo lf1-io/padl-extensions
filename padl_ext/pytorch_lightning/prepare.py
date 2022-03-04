@@ -8,7 +8,7 @@ import padl
 import pytorch_lightning as pl
 
 
-def padl_data_loader(data, padl_model, mode, **kwargs):
+def _padl_data_loader(data, padl_model, mode, **kwargs):
     """Create the :class:`~torch.utils.data.DataLoader` used by PADL models.
 
     This creates a :class:`~torch.utils.data.DataLoader` that can be directly passed to the
@@ -32,10 +32,10 @@ def padl_data_loader(data, padl_model, mode, **kwargs):
     ...     return torch.nn.functional.mse_loss(reconstruction, original)
     >>> model = identity >> batch >> Net() + identity >> padl_loss
     >>> data_list = [torch.randn([16])] * 4
-    >>> train_data_loader = padl_data_loader(data_list, model, 'train', batch_size=2)
+    >>> train_data_loader = _padl_data_loader(data_list, model, 'train', batch_size=2)
     >>> isinstance(train_data_loader, DataLoader)
     True
-    >>> val_data_loader = padl_data_loader(data_list, model, 'eval', batch_size=2)
+    >>> val_data_loader = _padl_data_loader(data_list, model, 'eval', batch_size=2)
     >>> isinstance(val_data_loader, DataLoader)
     True
     >>> padl_lightning = LightningModule(model)
@@ -63,9 +63,11 @@ class LightningModule(pl.LightningModule):
     :param learning_rate: learning rate
     :param kwargs: loader key word arguments for the DataLoader
     """
+    pd_save_options = {torch.nn.Module: 'no-save'}
     def __init__(
         self,
         padl_model,
+        trainer,
         train_data=None,
         val_data=None,
         test_data=None,
@@ -89,6 +91,7 @@ class LightningModule(pl.LightningModule):
         self.loader_kwargs = kwargs
         self.learning_rate = learning_rate
         self.pd_previous = []
+        self.trainer = trainer
 
         self.padl_model.pd_forward_device_check()
 
@@ -107,6 +110,17 @@ class LightningModule(pl.LightningModule):
             setattr(self, key, layer)
 
         self.inference_model = inference_model
+
+    def fit(self, *args, train_data=None, val_data=None, **kwargs):
+        if train_data is not None:
+            self.train_data = train_data
+        if val_data is not None:
+            self.val_data = val_data
+        if hasattr(self, '_restore_path'):
+            assert 'ckpt_path' not in kwargs, 'ckpt_path not supported'
+            self.trainer.fit(self, *args, **kwargs, ckpt_path=self._restore_path)
+        else:
+            self.trainer.fit(self, *args, **kwargs)
 
     def forward(self, x):
         """In pytorch lightning, forward defines the prediction/inference actions."""
@@ -212,16 +226,13 @@ class LightningModule(pl.LightningModule):
             best_k_model_paths = []
 
         if len(best_k_model_paths) == 0:
-            path = best_model_path + '.padl'
+            path = best_model_path
         else:
-            path = best_k_model_paths[-1] + '.padl'
+            path = best_k_model_paths[-1]
 
         if path not in self.pd_previous:
             self.pd_previous.append(path)
-            self.padl_model.pd_save(path, force_overwrite=True)
-            if self.inference_model is not None:
-                self.inference_model.pd_save(path.replace('.padl', '.infer.padl') ,
-                                             force_overwrite=True)
+            self.pd_save(path, force_overwrite=True)
 
         if len(best_k_model_paths) == 0:
             k = 1
@@ -230,12 +241,26 @@ class LightningModule(pl.LightningModule):
 
         del_dirpath = None
         if len(self.pd_previous) == k + 1:
-            del_dirpath = self.pd_previous.pop(0)
+            del_dirpath = self.pd_previous.pop(0) + '.padl'
+
         if del_dirpath is not None:
             shutil.rmtree(del_dirpath)
 
         # This will get saved in the Pytorch Lightning ckpt and is needed for reloading the ckpt
         checkpoint['padl_models'] = self.pd_previous
+
+    @property
+    def best_model_path(self):
+        return self.trainer.checkpoint_callback.best_model_path.split('.ckpt')[0] + '.padl'
+
+    @property
+    def best_k_models(self):
+        return [x.split('.ckpt')[0] + '.padl'
+                for x in self.trainer.checkpoint_callback.best_k_models]
+
+    def post_load(self, path, i):
+        self._restore_path = str(path).split('.padl')[0] + '.ckpt'
+        self.load_state_dict(torch.load(self._restore_path)['state_dict'])
 
     def configure_optimizers(self):
         """Implementation of the inherited method
@@ -249,11 +274,3 @@ class LightningModule(pl.LightningModule):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
 
-    # def load_from_checkpoint(
-    #     cls,
-    #     checkpoint_path: Union[str, IO],
-    #     map_location: Optional[Union[Dict[str, str], str, torch.device, int, Callable]] = None,
-    #     hparams_file: Optional[str] = None,
-    #     strict: bool = True,
-    #     **kwargs,
-    # ):

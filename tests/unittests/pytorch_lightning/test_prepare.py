@@ -6,7 +6,7 @@ from tests.material import utils
 import padl
 from padl import transform, identity, batch
 
-from padl_ext.pytorch_lightning.prepare import LightningModule, padl_data_loader
+from padl_ext.pytorch_lightning.prepare import LightningModule, _padl_data_loader
 try:
     import pytorch_lightning as pl
     from pytorch_lightning.callbacks import ModelCheckpoint
@@ -94,10 +94,10 @@ class TestPadlLightning:
         trainer.fit(pl_module)
 
     def test_pass_dataloader_to_trainer(self, tmp_path):
-        train_loader = padl_data_loader(self.train_data, self.transform_1, 'train',
-                                        batch_size=2, num_workers=0)
-        val_loader = padl_data_loader(self.val_data, self.transform_1, 'eval',
-                                      batch_size=2, num_workers=0)
+        train_loader = _padl_data_loader(self.train_data, self.transform_1, 'train',
+                                         batch_size=2, num_workers=0)
+        val_loader = _padl_data_loader(self.val_data, self.transform_1, 'eval',
+                                       batch_size=2, num_workers=0)
         trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
         padl_module = LightningModule(self.transform_1)
         trainer.fit(padl_module, train_loader, val_loader)
