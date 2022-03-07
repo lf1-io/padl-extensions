@@ -8,50 +8,6 @@ import padl
 import pytorch_lightning as pl
 
 
-def _padl_data_loader(data, padl_model, mode, **kwargs):
-    """Create the :class:`~torch.utils.data.DataLoader` used by PADL models.
-
-    This creates a :class:`~torch.utils.data.DataLoader` that can be directly passed to the
-    :meth:`pytorch_lightning.Trainer.fit` function.
-
-    Example:
-
-    >>> from padl import transform, batch, identity
-    >>> import torch
-    >>> from torch.utils.data import DataLoader
-    >>> import pytorch_lightning as pl
-    >>> @transform
-    ... class Net(torch.nn.Module):
-    ...     def __init__(self):
-    ...         super().__init__()
-    ...         self.encoder = torch.nn.Linear(16, 16)
-    ...     def forward(self, x):
-    ...         return self.encoder(x)
-    >>> @transform
-    ... def padl_loss(reconstruction, original):
-    ...     return torch.nn.functional.mse_loss(reconstruction, original)
-    >>> model = identity >> batch >> Net() + identity >> padl_loss
-    >>> data_list = [torch.randn([16])] * 4
-    >>> train_data_loader = _padl_data_loader(data_list, model, 'train', batch_size=2)
-    >>> isinstance(train_data_loader, DataLoader)
-    True
-    >>> val_data_loader = _padl_data_loader(data_list, model, 'eval', batch_size=2)
-    >>> isinstance(val_data_loader, DataLoader)
-    True
-    >>> padl_lightning = LightningModule(model)
-    >>> trainer = pl.Trainer()
-    >>> trainer.fit(padl_lightning, train_data_loader, val_data_loader)
-
-    :param data: List or iterator of data points to be preprocessed by `padl_model`
-    :param padl_model: PADL transform to be used in training
-    :param mode: PADL mode to call the preprocess :class:`padl.transforms.Transform` in
-        (can be 'infer', 'eval' or 'train')
-    :param kwargs: Keyword arguments passed to the data loader
-        (see :class:`~torch.utils.data.DataLoader` documentation for details).
-    """
-    return padl_model.pd_get_loader(data, padl_model.pd_preprocess, mode, **kwargs)
-
-
 @padl.transform
 class LightningModule(pl.LightningModule):
     """PADL connector to Pytorch Lightning.
@@ -270,7 +226,7 @@ class LightningModule(pl.LightningModule):
 
     def post_load(self, path, i):
         self._restore_path = str(path).split('.padl')[0] + '.ckpt'
-        self.load_state_dict(torch.load(self._restore_path)['state_dict'])
+        self.load_state_dict(torch.load(self._restore_path, map_location='cpu')['state_dict'])
 
     def configure_optimizers(self):
         """Implementation of the inherited method
