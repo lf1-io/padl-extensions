@@ -33,7 +33,7 @@ def prepare(target_model, version="1.0", force=False):
     ]
     if force:
         cmd += ["--force"]
-    output = subprocess.run(cmd, check=True)
+    output = subprocess.run(cmd, capture_output=True, check=True)
     print(output)
 
 
@@ -80,7 +80,7 @@ def stop():
     Note: When building the command double quotes needs to be used for compatibility with
     python 3.7 on Windows.
     """
-    output = subprocess.run(["torchserve", "--stop"], check=True)
+    output = subprocess.run(["torchserve", "--stop"], capture_output=True, check=True)
     print(output)
 
 
