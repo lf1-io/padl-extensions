@@ -3,11 +3,8 @@ import subprocess
 import pathlib
 
 
-def prepare(target_model, version="1.0", force=False):
+def prepare(target_model, version='1.0', force=False):
     """Prepare and package model into archive `mar` file with TorchModelArchiver.
-
-    Note: When building the command double quotes needs to be used for compatibility with
-    python 3.7 on Windows.
 
     :param target_model: PADL serialized model - `.padl`
     :param version: version of model
@@ -24,16 +21,16 @@ def prepare(target_model, version="1.0", force=False):
     print(f'converting {model_name} to MAR format...')
 
     cmd = [
-        "torch-model-archiver",
-        "--model-name", str(model_name),
-        "--version", str(version),
-        "--export-path", str(model_parent),
-        "--extra-files", str(target_model),
-        "--handler", str(handler_dir),
+        'torch-model-archiver',
+        '--model-name', model_name,
+        '--version', version,
+        '--export-path', model_parent,
+        '--extra-files', target_model,
+        '--handler', handler_dir,
     ]
     if force:
-        cmd += ["--force"]
-    subprocess.run(cmd, check=True)
+        cmd += ['--force']
+    subprocess.run(cmd)
 
 
 def serve(model_store,
@@ -41,12 +38,8 @@ def serve(model_store,
           ncs=True,
           workflow_store=None,
           ts_config=None,
-          log_config=None,
-          timeout=None):
+          log_config=None):
     """Serve model with TorchServe.
-
-    Note: When building the command double quotes needs to be used for compatibility with
-    python 3.7 on Windows.
 
     :param model_store: directory where model is stored
     :param model: model file name - `.mar`
@@ -54,44 +47,37 @@ def serve(model_store,
     :param ts_config: Configuration file for TorchServe
     :param workflow_store: Workflow store location where workflow can be loaded. Defaults to model_store
     :param log_config: Log4j configuration file for TorchServe
-    :param timeout: If provided a TimeoutExpired exception will be raised after the length
-        specified.
     """
     cmd = [
-        "torchserve",
-        "--start",
-        "--model-store", str(model_store),
-        "--models", str(model),
+        'torchserve',
+        '--start',
+        '--model-store', model_store,
+        '--models', model,
     ]
     if ncs:
-        cmd += ["--ncs"]
+        cmd += ['--ncs']
     if workflow_store is not None:
-        cmd += ["--workflow-store", str(workflow_store)]
+        cmd += ['--workflow-store', workflow_store]
     if ts_config is not None:
-        cmd += ["--ts-config", str(ts_config)]
+        cmd += ['--ts-config', ts_config]
     if log_config is not None:
-        cmd += ["--log-config", str(log_config)]
-    cmd += ["--foreground"]
-    subprocess.run(cmd, timeout=timeout, check=True)
+        cmd += ['--log-config', log_config]
+    cmd += ['--foreground']
+    subprocess.run(cmd)
 
 
 def stop():
-    """Stop TorchServe model-server.
-
-    Note: When building the command double quotes needs to be used for compatibility with
-    python 3.7 on Windows.
-    """
-    subprocess.run(["torchserve", "--stop"], check=True)
+    """Stop TorchServe model-server."""
+    subprocess.run(['torchserve', '--stop'])
 
 
 def prepare_and_serve(target_model,
-                      version="1.0",
+                      version='1.0',
                       force=False,
                       ncs=True,
                       workflow_store=None,
                       ts_config=None,
-                      log_config=None,
-                      timeout=None):
+                      log_config=None):
     """Package model and serve with TorchServe.
 
     :param target_model: PADL serialized model - `.padl`
@@ -99,11 +85,8 @@ def prepare_and_serve(target_model,
     :param force: if force=True, existing archive file is overwritten
     :param ncs: Disable snapshot feature for TorchServe
     :param ts_config: Configuration file for TorchServe
-    :param workflow_store: Workflow store location for TorchServe where workflow can be loaded.
-        Defaults to model_store
+    :param workflow_store: Workflow store location for TorchServe where workflow can be loaded. Defaults to model_store
     :param log_config: Log4j configuration file for TorchServe
-    :param timeout: If provided a TimeoutExpired exception will be raised after the length
-        specified.
     """
     target_model = pathlib.Path(target_model)
     model_parent = target_model.parent
@@ -118,5 +101,4 @@ def prepare_and_serve(target_model,
     print(f'converting {model_name} to MAR format...')
     print('Serving the model...')
 
-    serve(model_parent, mar_name, ncs=ncs, workflow_store=workflow_store, ts_config=ts_config,
-          log_config=log_config, timeout=timeout)
+    serve(model_parent, mar_name, ncs=ncs, workflow_store=workflow_store, ts_config=ts_config, log_config=log_config)
