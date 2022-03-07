@@ -38,9 +38,9 @@ def _padl_data_loader(data, padl_model, mode, **kwargs):
     >>> val_data_loader = _padl_data_loader(data_list, model, 'eval', batch_size=2)
     >>> isinstance(val_data_loader, DataLoader)
     True
-    >>> padl_lightning = LightningModule(model)
     >>> trainer = pl.Trainer()
-    >>> trainer.fit(padl_lightning, train_data_loader, val_data_loader)
+    >>> padl_lightning = LightningModule(model)
+    >>> padl_lightning.fit(train_data=train_data_loader, val_data=val_data_loader)
 
     :param data: List or iterator of data points to be preprocessed by `padl_model`
     :param padl_model: PADL transform to be used in training
@@ -64,6 +64,7 @@ class LightningModule(pl.LightningModule):
     :param kwargs: loader key word arguments for the DataLoader
     """
     pd_save_options = {torch.nn.Module: 'no-save'}
+
     def __init__(
         self,
         padl_model,
