@@ -8,7 +8,6 @@ from padl.transforms import Transform
 logger = logging.getLogger(__name__)
 
 
-
 class PadlHandler(BaseHandler):
     def __init__(self):
         super().__init__()
@@ -34,5 +33,5 @@ class PadlHandler(BaseHandler):
 
     def postprocess(self, data):
         Transform.pd_mode = 'infer'
-        output =self._pd_postprocess[1:].infer_apply(unbatch(data))
+        output = self._pd_postprocess[1:].infer_apply(unbatch(data))
         return [json.dumps(output)]
