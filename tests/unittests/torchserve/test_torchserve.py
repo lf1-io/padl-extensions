@@ -47,5 +47,5 @@ class TestTorchServe:
     def test_torchserve(self, tmp_dir):
         save_dir = tmp_dir + '/temp.padl'
         padl.save(self.transform_1, save_dir)
-        torchserve.prepare_and_serve(save_dir)
+        torchserve.prepare_and_serve(save_dir, timeout=60)
         torchserve.stop()

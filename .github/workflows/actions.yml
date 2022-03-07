@@ -35,7 +35,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ".[all]"
         pip install -r requirements-test.txt
-        java --version
+    - name: Setup Java 11 for torchserve
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'zulu'
+        java-version: '11'
     - name: Test with pytest
       run: |
         python -m pytest -s --cov=padl --cov-report=xml

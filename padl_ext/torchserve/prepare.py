@@ -42,7 +42,8 @@ def serve(model_store,
           ncs=True,
           workflow_store=None,
           ts_config=None,
-          log_config=None):
+          log_config=None,
+          timeout=None):
     """Serve model with TorchServe.
 
     Note: When building the command double quotes needs to be used for compatibility with
@@ -54,6 +55,8 @@ def serve(model_store,
     :param ts_config: Configuration file for TorchServe
     :param workflow_store: Workflow store location where workflow can be loaded. Defaults to model_store
     :param log_config: Log4j configuration file for TorchServe
+    :param timeout: If provided a TimeoutExpired exception will be raised after the length
+        specified.
     """
     cmd = [
         "torchserve",
@@ -70,7 +73,7 @@ def serve(model_store,
     if log_config is not None:
         cmd += ["--log-config", str(log_config)]
     cmd += ["--foreground"]
-    output = subprocess.run(cmd, check=True)
+    output = subprocess.run(cmd, timeout=timeout, check=True)
     print(output)
 
 
@@ -90,7 +93,8 @@ def prepare_and_serve(target_model,
                       ncs=True,
                       workflow_store=None,
                       ts_config=None,
-                      log_config=None):
+                      log_config=None,
+                      timeout=None):
     """Package model and serve with TorchServe.
 
     Note: When building the command double quotes needs to be used for compatibility with
@@ -104,6 +108,8 @@ def prepare_and_serve(target_model,
     :param workflow_store: Workflow store location for TorchServe where workflow can be loaded.
         Defaults to model_store
     :param log_config: Log4j configuration file for TorchServe
+    :param timeout: If provided a TimeoutExpired exception will be raised after the length
+        specified.
     """
     target_model = pathlib.Path(target_model)
     model_parent = target_model.parent
@@ -119,4 +125,4 @@ def prepare_and_serve(target_model,
     print('Serving the model...')
 
     serve(model_parent, mar_name, ncs=ncs, workflow_store=workflow_store, ts_config=ts_config,
-          log_config=log_config)
+          log_config=log_config, timeout=timeout)
