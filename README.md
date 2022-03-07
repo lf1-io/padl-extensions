@@ -1,5 +1,7 @@
+[![PyPI version](https://badge.fury.io/py/padl-extensions.svg)](https://badge.fury.io/py/padl-extensions)
 ![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)
 [![GitHub Issues](https://img.shields.io/github/issues/lf1-io/padl-extensions.svg)](https://github.com/lf1-io/padl-extensions/issues)
+[![Tests](https://github.com/lf1-io/padl-extensions/actions/workflows/actions.yml/badge.svg)](https://github.com/lf1-io/padl-extensions/actions/workflows/actions.yml)
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lf1-io/padl-extensions/)
 [![LF1 on Twitter](https://badgen.net/badge/icon/twitter?icon=twitter&label)](https://twitter.com/lf1_io)
 

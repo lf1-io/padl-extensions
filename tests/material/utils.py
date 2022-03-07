@@ -1,5 +1,8 @@
 import sys
-from importlib.metadata import DistributionFinder
+try:
+    from importlib.metadata import DistributionFinder
+except ImportError:
+    from importlib_metadata import DistributionFinder
 
 
 def check_if_module_installed(module_name):
