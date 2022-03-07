@@ -76,7 +76,7 @@ class TestPadlLightning:
         model_dir = os.path.join(dirpath, 'model.padl')
         padl.save(self.transform_1, model_dir)
         trainer = pl.Trainer(max_epochs=4, default_root_dir=dirpath, log_every_n_steps=2)
-        padl_lightning = LightningModule(model_dir, trainer, batch_size=2, num_workers=0)
+        padl_lightning = MyModule(model_dir, trainer, batch_size=2, num_workers=0)
         padl_lightning.fit(train_data=self.train_data, val_data=self.val_data)
         shutil.rmtree(dirpath)
 
