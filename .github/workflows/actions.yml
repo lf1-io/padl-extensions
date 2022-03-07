@@ -42,7 +42,7 @@ jobs:
         java-version: '11'
     - name: Test with pytest
       run: |
-        python -m pytest -s --cov=padl --cov-report=xml
+        python -m pytest --cov=padl_ext --cov-report=xml
     - name: "Upload coverage to Codecov"
       if: ${{ matrix.python-version == '3.8' && matrix.os == 'ubuntu-latest' }}
       uses: codecov/codecov-action@v2
