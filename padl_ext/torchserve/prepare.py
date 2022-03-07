@@ -33,7 +33,7 @@ def prepare(target_model, version="1.0", force=False):
     ]
     if force:
         cmd += ["--force"]
-    subprocess.run(cmd)
+    subprocess.run(cmd, check=True)
 
 
 def serve(model_store,
@@ -69,7 +69,7 @@ def serve(model_store,
     if log_config is not None:
         cmd += ["--log-config", str(log_config)]
     cmd += ["--foreground"]
-    subprocess.run(cmd)
+    subprocess.run(cmd, check=True)
 
 
 def stop():
@@ -78,7 +78,7 @@ def stop():
     Note: When building the command double quotes needs to be used for compatibility with
     python 3.7 on Windows.
     """
-    subprocess.run(["torchserve", "--stop"])
+    subprocess.run(["torchserve", "--stop"], check=True)
 
 
 def prepare_and_serve(target_model,
