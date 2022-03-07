@@ -57,13 +57,17 @@ class LightningModule(pl.LightningModule):
     """PADL connector to Pytorch Lightning.
 
     :param padl_model: PADL transform. Can provide a string path to load a PADL transform.
+    :param trainer: PyTorch lightning trainer.
     :param train_data: list of training data points
     :param val_data: list of validation data points
     :param test_data: list of test data points
     :param learning_rate: learning rate
+    :param inference_model: PADL transform to be saved together with the `padl_model`
     :param kwargs: loader key word arguments for the DataLoader
     """
-    pd_save_options = {torch.nn.Module: 'no-save'}
+    pd_save_options = {
+        'torch.nn.Module': 'no-save',
+    }
     def __init__(
         self,
         padl_model,
@@ -112,6 +116,12 @@ class LightningModule(pl.LightningModule):
         self.inference_model = inference_model
 
     def fit(self, *args, train_data=None, val_data=None, **kwargs):
+        """
+        Fit PyTorch-Lightning transform on train-data, evaluating on val-data.
+
+        :param train_data: PADL training data
+        :param valid_data: PADL validation data
+        """
         if train_data is not None:
             self.train_data = train_data
         if val_data is not None:
