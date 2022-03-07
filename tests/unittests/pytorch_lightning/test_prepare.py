@@ -80,12 +80,16 @@ class TestPadlLightning:
         padl_lightning.fit(train_data=self.train_data, val_data=self.val_data)
         shutil.rmtree(dirpath)
 
-    # def test_reload_checkpoint(self, tmp_path):
-    #     trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
-    #     trainer.fit(self.padl_lightning)
-    #     pl_module = MyModule.load_from_checkpoint(
-    #         trainer.checkpoint_callback.best_model_path,
-    #         padl_model=trainer.checkpoint_callback.best_model_path.replace('.ckpt', '.padl'),
-    #         train_data=self.train_data,
-    #     )
-    #     trainer.fit(pl_module)
+    def test_reload_checkpoint(self):
+        dirpath = tempfile.mkdtemp()
+        dirpath = padl.value(dirpath)
+        model_dir = os.path.join(dirpath, 'tmp.padl')
+        padl.save(self.transform_1, model_dir)
+        trainer = pl.Trainer(max_epochs=4, default_root_dir=dirpath, log_every_n_steps=2)
+        padl_lightning = MyModule(model_dir, trainer, batch_size=2, num_workers=0)
+        padl_lightning.fit(train_data=self.train_data, val_data=self.val_data)
+
+        loaded_padl_lightning = padl.load(padl_lightning.best_model_path)
+        loaded_padl_lightning.fit(train_data=self.train_data, val_data=self.val_data)
+
+        shutil.rmtree(dirpath)

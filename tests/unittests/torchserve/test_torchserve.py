@@ -50,5 +50,5 @@ class TestTorchServe:
         save_dir = tmp_dir + '/temp.padl'
         padl.save(self.transform_1, save_dir)
         with pytest.raises(TimeoutExpired):
-            torchserve.prepare_and_serve(save_dir, timeout=30)
+            torchserve.prepare_and_serve(save_dir, timeout=5)
         torchserve.stop()
