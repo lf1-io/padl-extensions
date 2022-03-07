@@ -6,6 +6,9 @@ import pathlib
 def prepare(target_model, version="1.0", force=False):
     """Prepare and package model into archive `mar` file with TorchModelArchiver.
 
+    Note: When building the command double quotes needs to be used for compatibility with
+    python 3.7 on Windows.
+
     :param target_model: PADL serialized model - `.padl`
     :param version: version of model
     :param force: if force=True, existing archive file is overwritten
@@ -41,6 +44,9 @@ def serve(model_store,
           log_config=None):
     """Serve model with TorchServe.
 
+    Note: When building the command double quotes needs to be used for compatibility with
+    python 3.7 on Windows.
+
     :param model_store: directory where model is stored
     :param model: model file name - `.mar`
     :param ncs: Disable snapshot feature
@@ -67,7 +73,11 @@ def serve(model_store,
 
 
 def stop():
-    """Stop TorchServe model-server."""
+    """Stop TorchServe model-server.
+
+    Note: When building the command double quotes needs to be used for compatibility with
+    python 3.7 on Windows.
+    """
     subprocess.run(["torchserve", "--stop"])
 
 
@@ -79,6 +89,9 @@ def prepare_and_serve(target_model,
                       ts_config=None,
                       log_config=None):
     """Package model and serve with TorchServe.
+
+    Note: When building the command double quotes needs to be used for compatibility with
+    python 3.7 on Windows.
 
     :param target_model: PADL serialized model - `.padl`
     :param version: version of model
