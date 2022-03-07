@@ -1,12 +1,15 @@
 import pytest
 import torch
+import tempfile
+import shutil
+import os
 
 from tests.material import utils
 
 import padl
 from padl import transform, identity, batch
 
-from padl_ext.pytorch_lightning.prepare import LightningModule, _padl_data_loader
+from padl_ext.pytorch_lightning.prepare import LightningModule
 try:
     import pytorch_lightning as pl
     from pytorch_lightning.callbacks import ModelCheckpoint
@@ -68,21 +71,14 @@ class TestPadlLightning:
         request.cls.train_data = [torch.randn([28, 28])] * 16
         request.cls.val_data = [torch.randn([28, 28])] * 8
 
-    def test_training(self, tmp_path):
-        trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
-        padl_lightning = MyModule(
-            self.transform_1, trainer, train_data=self.train_data,
-            val_data=self.val_data, batch_size=2, num_workers=0)
-        padl_lightning.fit()
-
-    def test_training_from_load(self, tmp_path):
-        model_dir = str(tmp_path / 'model.padl')
+    def test_training_from_load(self):
+        dirpath = tempfile.mkdtemp()
+        model_dir = os.path.join(dirpath, 'model.padl')
         padl.save(self.transform_1, model_dir)
-        trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
-        padl_lightning = MyModule(
-            model_dir, trainer, train_data=self.train_data,
-            val_data=self.val_data, batch_size=2, num_workers=0)
-        padl_lightning.fit()
+        trainer = pl.Trainer(max_epochs=4, default_root_dir=dirpath, log_every_n_steps=2)
+        padl_lightning = LightningModule(model_dir, trainer, batch_size=2, num_workers=0)
+        padl_lightning.fit(train_data=self.train_data, val_data=self.val_data)
+        shutil.rmtree(dirpath)
 
     # def test_reload_checkpoint(self, tmp_path):
     #     trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
@@ -93,12 +89,3 @@ class TestPadlLightning:
     #         train_data=self.train_data,
     #     )
     #     trainer.fit(pl_module)
-
-    def test_pass_dataloader_to_trainer(self, tmp_path):
-        train_loader = _padl_data_loader(self.train_data, self.transform_1, 'train',
-                                         batch_size=2, num_workers=0)
-        val_loader = _padl_data_loader(self.val_data, self.transform_1, 'eval',
-                                       batch_size=2, num_workers=0)
-        trainer = pl.Trainer(max_epochs=4, default_root_dir=str(tmp_path), log_every_n_steps=2)
-        padl_module = LightningModule(self.transform_1, trainer)
-        padl_module.fit(train_loader, val_loader)
