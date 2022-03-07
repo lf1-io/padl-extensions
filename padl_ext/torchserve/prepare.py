@@ -94,9 +94,6 @@ def prepare_and_serve(target_model,
                       timeout=None):
     """Package model and serve with TorchServe.
 
-    Note: When building the command double quotes needs to be used for compatibility with
-    python 3.7 on Windows.
-
     :param target_model: PADL serialized model - `.padl`
     :param version: version of model
     :param force: if force=True, existing archive file is overwritten
