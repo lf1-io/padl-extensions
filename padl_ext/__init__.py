@@ -6,10 +6,11 @@ except ImportError:
     pass
 
 try:
-    from padl_ext.torchserve.prepare import prepare
+    from padl_ext.torchserve.prepare import prepare, serve, prepare_and_serve, stop
     from padl_ext.torchserve.handler import PadlHandler
 except ImportError:
     print("Please install torchserve dependencies "
           "(pip install padl-extensions[torchserve]) to use the connector")
     pass
 
+from padl_ext.trainer.trainer import Trainer

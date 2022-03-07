@@ -217,7 +217,7 @@ class LightningModule(pl.LightningModule):
 
     def post_load(self, path, i):
         self._restore_path = str(path).split('.padl')[0] + '.ckpt'
-        self.load_state_dict(torch.load(self._restore_path)['state_dict'])
+        self.load_state_dict(torch.load(self._restore_path, map_location='cpu')['state_dict'])
 
     def configure_optimizers(self):
         """Implementation of the inherited method
