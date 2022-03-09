@@ -21,9 +21,7 @@ class LightningModule(pl.LightningModule):
     :param inference_model: PADL transform to be saved together with the `padl_model`
     :param kwargs: loader key word arguments for the DataLoader
     """
-    pd_save_options = {
-        'torch.nn.Module': 'no-save',
-    }
+
     def __init__(
         self,
         padl_model,
@@ -54,6 +52,7 @@ class LightningModule(pl.LightningModule):
         self.trainer = trainer
 
         self.padl_model.pd_forward_device_check()
+        self.pd_save_options = {torch.nn.Module: 'no-save'}
 
         # Set Pytorch layers as attributes from PADL model
         layers = self.padl_model.pd_layers
